@@ -1,0 +1,104 @@
+body {
+  margin: 0;
+  background: #111;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1000px;
+  padding: 10px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0078d7;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.logo {
+  font-size: 28px;
+  color: orange;
+  text-shadow: 2px 2px #000;
+  margin: 0;
+}
+
+.status {
+  text-align: right;
+}
+
+.status div {
+  font-size: 16px;
+  font-weight: bold;
+  color: yellow;
+}
+
+.game-area {
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  margin-top: 20px;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
+}
+
+canvas {
+  background: #222;
+  border: 1px solid #555;
+  margin: 5px 0;
+}
+
+.controls {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.controls button {
+  background: #006400;
+  color: #fff;
+  padding: 8px 20px;
+  margin: 0 5px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.controls button#reset {
+  background: #8B0000;
+}
+
+.mobile-keys {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.row button {
+  background: #333;
+  color: #eee;
+  border: 1px solid #666;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}

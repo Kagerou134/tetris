@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TETRIS CLONE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 class="logo">TETRIS</h1>
+      <div class="status">
+        <div id="level">LV:000</div>
+        <div id="score">SCORE:000000000000</div>
+      </div>
+    </header>
+
+    <div class="game-area">
+      <div class="side">
+        <h2>HOLD</h2>
+        <canvas id="hold" width="80" height="80"></canvas>
+      </div>
+
+      <canvas id="board" width="240" height="400"></canvas>
+
+      <div class="side">
+        <h2>NEXT</h2>
+        <div id="next-blocks">
+          <canvas class="next" width="80" height="80"></canvas>
+          <canvas class="next" width="80" height="80"></canvas>
+          <canvas class="next" width="80" height="80"></canvas>
+          <canvas class="next" width="80" height="80"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="play">PLAY / PAUSE</button>
+      <button id="reset">RESET</button>
+    </div>
+
+    <div class="mobile-keys">
+      <div class="row">
+        <button data-key="ArrowLeft">←</button>
+        <button data-key="ArrowDown">↓</button>
+        <button data-key="ArrowRight">→</button>
+      </div>
+      <div class="row">
+        <button data-key="z">Z</button>
+        <button data-key="x">X</button>
+        <button data-key="c">HOLD</button>
+        <button data-key=" ">DROP</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
