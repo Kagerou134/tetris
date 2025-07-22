@@ -19,11 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
     '#FFA500',    // 3: L
     '#FFFF00',    // 4: O
     '#00FF00',    // 5: S
-    '#800080',    // 6: T
+    '#f91af9ff',    // 6: T
     '#FF0000'     // 7: Z
   ];
  
   const pieces = 'IJLOSTZ';
+  let bag = []; // ←ここ
   function createPiece(type) {
     switch(type) {
       case 'I': return [[1,1,1,1]];
@@ -35,6 +36,20 @@ document.addEventListener("DOMContentLoaded", () => {
       case 'Z': return [[7,7,0],[0,7,7]];
     }
   }
+
+  function shuffleBag() {
+  const types = pieces.split('');
+  for (let i = types.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [types[i], types[j]] = [types[j], types[i]];
+  }
+  return types;
+}
+
+function getNextPiece() {
+  if (bag.length === 0) bag = shuffleBag();
+  return createPiece(bag.pop());
+}
  
   function createMatrix(w, h) {
     const matrix = [];
@@ -77,7 +92,31 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
- 
+  
+function drawGhost() {
+  // プレイヤーのミノがどこまで落ちるかをシミュレート
+  const ghostY = getGhostY();
+  if (ghostY === null) return; // 万一取得できなかったら描画しない
+  const ghostPos = {x: player.pos.x, y: ghostY};
+  // ゴースト用色
+  context.save();
+  context.globalAlpha = 0.35; // 半透明で
+  drawMatrix(player.matrix, ghostPos);
+  context.restore();
+}
+
+function getGhostY() {
+  let y = player.pos.y;
+  while (true) {
+    y++;
+    if (collide(arena, {matrix: player.matrix, pos: {x: player.pos.x, y: y}})) {
+      return y - 1;
+    }
+    // 20段以上落ちてたら安全のためbreak
+    if (y > arena.length) return null;
+  }
+}
+
   function drawHold() {
     holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
     if (player.hold) drawMatrix(player.hold, {x: 1, y: 1}, holdCtx);
@@ -164,15 +203,16 @@ document.addEventListener("DOMContentLoaded", () => {
     dropCounter = 0;
   }
  
-  function playerHardDrop() {
-    while (!collide(arena, player)) player.pos.y++;
-    player.pos.y--;
-    merge(arena, player);
-    playerReset();
-    sweepLines();
-    updateScore();
-    dropCounter = 0;
-  }
+ function playerHardDrop() {
+  while (!collide(arena, player)) player.pos.y++;
+  player.pos.y--;
+  merge(arena, player);
+  draw(); // ← ここ追加
+  playerReset();
+  sweepLines();
+  updateScore();
+  dropCounter = 0;
+}
  
   function playerMove(dir) {
     player.pos.x += dir;
@@ -241,11 +281,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let lastTime = 0;
   let pause = true;
  
-  function draw() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    drawMatrix(arena, {x: 0, y: 0});
-    drawMatrix(player.matrix, player.pos);
-  }
+ function draw() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  drawMatrix(arena, {x: 0, y: 0});
+  drawGhost();
+  drawMatrix(player.matrix, player.pos);
+}
  
   function update(time = 0) {
     if (pause) return;
@@ -257,37 +298,45 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(update);
   }
  
-  document.addEventListener("keydown", e => {
-    if (pause) return;
-    switch (e.key) {
-      case 'ArrowLeft': playerMove(-1); break;
-      case 'ArrowRight': playerMove(1); break;
-      case 'ArrowDown': playerDrop(); break;
-      case 'Enter': playerHardDrop(); break;
-      case 'z': case 'Z': playerRotate(-1); break;
-      case 'x': case 'X': playerRotate(1); break;
-      case 'c': case 'C': playerHold(); break;
-    }
-  });
+document.addEventListener("keydown", e => {
+  // デバッグ用
+  console.log("keydown:", e.key, "code:", e.code);
+
+  if (pause) return;
+  switch (e.key) {
+    case 'ArrowLeft': playerMove(-1); break;
+    case 'ArrowRight': playerMove(1); break;
+    case 'ArrowDown': playerDrop(); break;
+    case ' ': // ←スペースキー
+    case 'Spacebar': // 旧ブラウザ用
+    case 'Space': // e.codeが"Space"の場合もカバーしたいなら
+      playerHardDrop(); break;
+    case 'z': case 'Z': playerRotate(-1); break;
+    case 'x': case 'X': playerRotate(1); break;
+    case 'c': case 'C': playerHold(); break;
+  }
+});
  
   document.getElementById("play").addEventListener("click", () => {
-    pause = !pause;
-    if (!pause) update();
-    document.getElementById("play").textContent = pause ? "PLAY" : "PAUSE";
-  });
- 
-  document.getElementById("reset").addEventListener("click", () => {
-    arena.forEach(row => row.fill(0));
-    player.score = 0;
-    player.level = 0;
-    player.next = [];
-    for (let i = 0; i < 4; i++) player.next.push(createPiece(randomPiece()));
-    playerReset();
-    pause = false;
-    updateScore();
-    update();
-    document.getElementById("play").textContent = "PAUSE";
-  });
+  pause = !pause;
+  if (!pause) update();
+  document.getElementById("play").textContent = pause ? "PLAY" : "PAUSE";
+  canvas.focus(); // 追加：ボタンクリック後はcanvasにフォーカス戻す！
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  arena.forEach(row => row.fill(0));
+  player.score = 0;
+  player.level = 0;
+  player.next = [];
+  for (let i = 0; i < 4; i++) player.next.push(createPiece(randomPiece()));
+  playerReset();
+  pause = false;
+  updateScore();
+  update();
+  document.getElementById("play").textContent = "PAUSE";
+  canvas.focus(); // ここも追加！
+});
  
   document.querySelectorAll('[data-key]').forEach(btn => {
     btn.addEventListener('click', () => {
