@@ -1,9 +1,10 @@
-// tetris-clone/script.js
-
 document.addEventListener("DOMContentLoaded", () => {
+  // --- canvas初期化（20x20ピクセル単位で） ---
   const canvas = document.getElementById('board');
+  canvas.width = 240;
+  canvas.height = 400;
   const context = canvas.getContext('2d');
-  context.scale(20, 20);
+  context.setTransform(20, 0, 0, 20, 0, 0);
 
   const ROWS = 20;
   const COLS = 12;
@@ -11,27 +12,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const holdCanvas = document.getElementById('hold');
   const holdCtx = holdCanvas.getContext('2d');
-
   const nextCanvases = document.querySelectorAll('.next');
 
-  const colors = [
-    null,
-    '#00FFFF', '#FFFF00', '#00FF00', '#FF0000', '#0000FF', '#FFA500', '#800080'
-  ];
+ const colors = [
+  null,         // 0: 空
+  '#00FFFF',    // 1: I
+  '#0000FF',    // 2: J
+  '#FFA500',    // 3: L
+  '#FFFF00',    // 4: O
+  '#00FF00',    // 5: S
+  '#800080',    // 6: T
+  '#FF0000'     // 7: Z
+];
 
-  const pieces = 'TJLOSZI';
-
-  function createPiece(type) {
-    switch (type) {
-      case 'I': return [[1, 1, 1, 1]];
-      case 'O': return [[2, 2], [2, 2]];
-      case 'S': return [[0, 3, 3], [3, 3, 0]];
-      case 'Z': return [[4, 4, 0], [0, 4, 4]];
-      case 'J': return [[5, 0, 0], [5, 5, 5]];
-      case 'L': return [[0, 0, 6], [6, 6, 6]];
-      case 'T': return [[0, 7, 0], [7, 7, 7]];
-    }
+  const pieces = 'IJLOSTZ';
+function createPiece(type) {
+  switch(type) {
+    case 'I': return [[1,1,1,1]];
+    case 'J': return [[0,0,2],[2,2,2]];
+    case 'L': return [[3,0,0],[3,3,3]];
+    case 'O': return [[4,4],[4,4]];
+    case 'S': return [[0,5,5],[5,5,0]];
+    case 'T': return [[0,6,0],[6,6,6]];
+    case 'Z': return [[7,7,0],[0,7,7]];
   }
+}
 
   function createMatrix(w, h) {
     const matrix = [];
@@ -49,25 +54,37 @@ document.addEventListener("DOMContentLoaded", () => {
     next: [],
   };
 
-  function drawMatrix(matrix, offset, ctx = context) {
-    matrix.forEach((row, y) => {
-      row.forEach((value, x) => {
-        if (value !== 0) {
-          ctx.fillStyle = colors[value];
-          ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
-          ctx.strokeStyle = '#222';
-          ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
-        }
-      });
+function drawMatrix(matrix, offset, ctx = context) {
+  // ctx.save(); ←コメントアウト
+  // if (ctx === context) {
+  //   ctx.setTransform(20, 0, 0, 20, 0, 0);
+  // } else {
+  //   ctx.setTransform(10, 0, 0, 10, 0, 0);
+  // }
+ 
+  matrix.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value !== 0) {
+        ctx.fillStyle = colors[value] || '#F0F';
+        ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+        ctx.strokeStyle = '#222';
+        ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
+      }
     });
-  }
+  });
+ 
+  // ctx.restore(); ←コメントアウト
+}
 
-  function draw() {
-    context.fillStyle = '#111';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    drawMatrix(arena, {x: 0, y: 0});
-    drawMatrix(player.matrix, player.pos);
-  }
+ function draw() {
+  console.log('player.matrix:', player.matrix);
+  console.log('player.pos:', player.pos);
+ 
+  context.fillStyle = '#111';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  drawMatrix(arena, {x: 0, y: 0});
+  drawMatrix(player.matrix, player.pos);
+}
 
   function drawHold() {
     holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
@@ -213,7 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let dropCounter = 0;
   let dropInterval = 1000;
   let lastTime = 0;
-  let pause = false;
+  let pause = true;
 
   function update(time = 0) {
     if (pause) return;
@@ -226,22 +243,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.addEventListener("keydown", e => {
-    if (pause && e.key !== 'p') return;
+    if (pause) return;
     switch (e.key) {
       case 'ArrowLeft': playerMove(-1); break;
       case 'ArrowRight': playerMove(1); break;
       case 'ArrowDown': playerDrop(); break;
-      case ' ': playerHardDrop(); break;
+      case 'Enter': playerHardDrop(); break;
       case 'z': case 'Z': playerRotate(-1); break;
       case 'x': case 'X': playerRotate(1); break;
       case 'c': case 'C': playerHold(); break;
-      case 'p': pause = !pause; if (!pause) update(); break;
     }
   });
 
-  document.getElementById("play").addEventListener("click", () => {
+  document.getElementById("play").addEventListener("click", (e) => {
     pause = !pause;
     if (!pause) update();
+    document.getElementById("play").textContent = pause ? "PLAY" : "PAUSE";
   });
 
   document.getElementById("reset").addEventListener("click", () => {
@@ -254,6 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pause = false;
     updateScore();
     update();
+    document.getElementById("play").textContent = "PAUSE";
   });
 
   document.querySelectorAll('[data-key]').forEach(btn => {
@@ -264,8 +282,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  canvas.tabIndex = 1;
+  canvas.style.outline = "none";
+  canvas.focus();
+
   for (let i = 0; i < 4; i++) player.next.push(createPiece(randomPiece()));
   playerReset();
-  update();
 });
-
