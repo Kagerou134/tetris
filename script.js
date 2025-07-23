@@ -94,18 +94,12 @@ function getNextPiece() {
   }
   
 function drawGhost() {
-  // プレイヤーのミノがどこまで落ちるかをシミュレート
   const ghostY = getGhostY();
-  if (ghostY === null) return; // 万一取得できなかったら描画しない
+  if (ghostY === null) return;
   const ghostPos = {x: player.pos.x, y: ghostY};
-  // ゴースト用色
-  context.save();
-  context.globalAlpha = 0.35; // 半透明で
-  drawMatrix(player.matrix, ghostPos);
-  context.restore();
-}
+  const blockSize = 20; // メイン盤面のブロックサイズ
 
-function getGhostY() {
+  function getGhostY() {
   let y = player.pos.y;
   while (true) {
     y++;
@@ -115,6 +109,25 @@ function getGhostY() {
     // 20段以上落ちてたら安全のためbreak
     if (y > arena.length) return null;
   }
+}
+
+  context.save();
+  context.globalAlpha = 0.5; // 少し濃いめ（画像に近づけるなら0.4~0.6で調整）
+  const ghostColor = "#B0B0B0"; // 影専用グレー（画像だとやや明るめグレー）
+  player.matrix.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value !== 0) {
+        context.fillStyle = ghostColor;
+        context.fillRect(
+          (x + ghostPos.x) * blockSize,
+          (y + ghostPos.y) * blockSize,
+          blockSize,
+          blockSize
+        );
+      }
+    });
+  });
+  context.restore();
 }
 
   function drawHold() {
@@ -219,9 +232,9 @@ function getGhostY() {
     if (collide(arena, player)) player.pos.x -= dir;
   }
  
-  function playerReset() {
+    function playerReset() {
     player.matrix = player.next.shift();
-    while (player.next.length < 4) player.next.push(createPiece(randomPiece()));
+    while (player.next.length < 4) player.next.push(getNextPiece());
     player.pos.y = 0;
     player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
     player.hasHeld = false;
@@ -238,21 +251,21 @@ function getGhostY() {
   }
  
   function playerHold() {
-    if (player.hasHeld) return;
-    const temp = player.hold;
-    player.hold = player.matrix;
-    if (temp) {
-      player.matrix = temp;
-    } else {
-      player.matrix = player.next.shift();
-      player.next.push(createPiece(randomPiece()));
-    }
-    player.pos.y = 0;
-    player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
-    player.hasHeld = true;
-    drawHold();
-    drawNext();
+  if (player.hasHeld) return;
+  const temp = player.hold;
+  player.hold = player.matrix;
+  if (temp) {
+    player.matrix = temp;
+  } else {
+    player.matrix = player.next.shift();
+    player.next.push(getNextPiece()); // ←これに統一！
   }
+  player.pos.y = 0;
+  player.pos.x = (COLS / 2 | 0) - (player.matrix[0].length / 2 | 0);
+  player.hasHeld = true;
+  drawHold();
+  drawNext();
+}
  
   function sweepLines() {
     outer: for (let y = ROWS - 1; y >= 0; y--) {
@@ -329,13 +342,13 @@ document.getElementById("reset").addEventListener("click", () => {
   player.score = 0;
   player.level = 0;
   player.next = [];
-  for (let i = 0; i < 4; i++) player.next.push(createPiece(randomPiece()));
+  for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
   pause = false;
   updateScore();
   update();
   document.getElementById("play").textContent = "PAUSE";
-  canvas.focus(); // ここも追加！
+  canvas.focus();
 });
  
   document.querySelectorAll('[data-key]').forEach(btn => {
@@ -350,6 +363,6 @@ document.getElementById("reset").addEventListener("click", () => {
   canvas.style.outline = "none";
   canvas.focus();
  
-  for (let i = 0; i < 4; i++) player.next.push(createPiece(randomPiece()));
+for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
 });
