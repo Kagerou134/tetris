@@ -1,33 +1,38 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const canvas = document.getElementById('board');
-  canvas.width = 240;
-  canvas.height = 400;
-  const context = canvas.getContext('2d');
-
   const ROWS = 20;
   const COLS = 12;
-  const arena = createMatrix(COLS, ROWS);
+  const DEFAULT_BLOCK_SIZE = 20;
+  const canvas = document.getElementById('board');
+  let blockSize = DEFAULT_BLOCK_SIZE;
 
+  // ------★ 盤面リサイズ＆スケール設定（スマホ対応）★------
+  function resizeCanvasForMobile() {
+    if (window.innerWidth < 800) {
+      let w = Math.min(window.innerWidth * 0.97, 380); // 幅最大380px
+      blockSize = Math.floor(w / COLS);
+      canvas.width = blockSize * COLS;
+      canvas.height = blockSize * ROWS;
+    } else {
+      blockSize = DEFAULT_BLOCK_SIZE;
+      canvas.width = COLS * blockSize;
+      canvas.height = ROWS * blockSize;
+    }
+  }
+  resizeCanvasForMobile();
+  window.addEventListener('resize', () => {
+    resizeCanvasForMobile();
+    draw(); // サイズ変更時は即再描画
+  });
+
+  const context = canvas.getContext('2d');
   const holdCanvas = document.getElementById('hold');
   const holdCtx = holdCanvas.getContext('2d');
   const nextCanvases = document.querySelectorAll('.next');
-
-  // 色指定（1～7が各テトリミノ色）
   const colors = [
-    null,         // 0: 空
-    '#00FFFF',    // 1: I
-    '#0000FF',    // 2: J
-    '#FFA500',    // 3: L
-    '#FFFF00',    // 4: O
-    '#00FF00',    // 5: S
-    '#e628e6ff',    // 6: T
-    '#FF0000'     // 7: Z
+    null, '#00FFFF', '#0000FF', '#FFA500', '#FFFF00', '#00FF00', '#e628e6ff', '#FF0000'
   ];
-
   const pieces = 'IJLOSTZ';
   let bag = [];
-
-  // --- 追加ボーナス用変数 ---
   let combo = 0;
   let softDropDistance = 0;
 
@@ -42,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
       case 'Z': return [[7,7,0],[0,7,7]];
     }
   }
-
   function shuffleBag() {
     const types = pieces.split('');
     for (let i = types.length - 1; i > 0; i--) {
@@ -51,18 +55,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return types;
   }
-
   function getNextPiece() {
     if (bag.length === 0) bag = shuffleBag();
     return createPiece(bag.pop());
   }
-
   function createMatrix(w, h) {
     const matrix = [];
     while (h--) matrix.push(new Array(w).fill(0));
     return matrix;
   }
-
+  const arena = createMatrix(COLS, ROWS);
   const player = {
     pos: {x: 0, y: 0},
     matrix: null,
@@ -72,31 +74,27 @@ document.addEventListener("DOMContentLoaded", () => {
     hasHeld: false,
     next: [],
   };
-
   function drawMatrix(matrix, offset, ctx = context) {
-    const blockSize = (ctx === context) ? 20 : 10;
+    const bs = (ctx === context) ? blockSize : 10;
     matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
           ctx.fillStyle = colors[value] || '#F0F';
           ctx.fillRect(
-            (x + offset.x) * blockSize,
-            (y + offset.y) * blockSize,
-            blockSize,
-            blockSize
+            (x + offset.x) * bs,
+            (y + offset.y) * bs,
+            bs, bs
           );
           ctx.strokeStyle = '#222';
           ctx.strokeRect(
-            (x + offset.x) * blockSize,
-            (y + offset.y) * blockSize,
-            blockSize,
-            blockSize
+            (x + offset.x) * bs,
+            (y + offset.y) * bs,
+            bs, bs
           );
         }
       });
     });
   }
-
   function getGhostY() {
     let y = player.pos.y;
     while (true) {
@@ -107,36 +105,32 @@ document.addEventListener("DOMContentLoaded", () => {
       if (y > arena.length) return null;
     }
   }
-
   function drawGhost() {
     const ghostY = getGhostY();
     if (ghostY === null) return;
     const ghostPos = {x: player.pos.x, y: ghostY};
-    const blockSize = 20;
     context.save();
     context.globalAlpha = 0.5;
     const ghostColor = "#B0B0B0";
+    const bs = blockSize;
     player.matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
           context.fillStyle = ghostColor;
           context.fillRect(
-            (x + ghostPos.x) * blockSize,
-            (y + ghostPos.y) * blockSize,
-            blockSize,
-            blockSize
+            (x + ghostPos.x) * bs,
+            (y + ghostPos.y) * bs,
+            bs, bs
           );
         }
       });
     });
     context.restore();
   }
-
   function drawHold() {
     holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
     if (player.hold) drawMatrix(player.hold, {x: 1, y: 1}, holdCtx);
   }
-
   function drawNext() {
     player.next.forEach((matrix, i) => {
       const ctx = nextCanvases[i].getContext('2d');
@@ -144,7 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
       drawMatrix(matrix, {x: 1, y: 1}, ctx);
     });
   }
-
   function collide(arena, player) {
     const m = player.matrix;
     const o = player.pos;
@@ -155,7 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return false;
   }
-
   function merge(arena, player) {
     player.matrix.forEach((row, y) => {
       row.forEach((value, x) => {
@@ -163,7 +155,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-
   function rotate(matrix, dir) {
     const N = matrix.length;
     const M = matrix[0].length;
@@ -186,7 +177,6 @@ document.addEventListener("DOMContentLoaded", () => {
     matrix.length = 0;
     res.forEach(row => matrix.push(row));
   }
-
   function playerRotate(dir) {
     const pos = player.pos.x;
     let offset = 1;
@@ -201,8 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
-
-  // --- スコア全部入り sweepLines ---
   function sweepLines() {
     let lines = 0;
     outer: for (let y = ROWS - 1; y >= 0; y--) {
@@ -214,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
       y++;
       lines++;
     }
-
     // スコア加点
     const lineScores = [0, 100, 300, 500, 800];
     if (lines > 0) {
@@ -230,8 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     player.level = Math.floor(player.score / 1000);
   }
-
-  // --- ソフトドロップ付き ---
   function playerDrop() {
     player.pos.y++;
     softDropDistance++;
@@ -246,8 +231,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     dropCounter = 0;
   }
-
-  // --- ハードドロップ付き ---
   function playerHardDrop() {
     let drop = 0;
     while (!collide(arena, player)) {
@@ -263,12 +246,10 @@ document.addEventListener("DOMContentLoaded", () => {
     playerReset();
     dropCounter = 0;
   }
-
   function playerMove(dir) {
     player.pos.x += dir;
     if (collide(arena, player)) player.pos.x -= dir;
   }
-
   function playerReset() {
     player.matrix = player.next.shift();
     while (player.next.length < 4) player.next.push(getNextPiece());
@@ -286,7 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
     drawHold();
     updateScore();
   }
-
   function playerHold() {
     if (player.hasHeld) return;
     const temp = player.hold;
@@ -303,12 +283,10 @@ document.addEventListener("DOMContentLoaded", () => {
     drawHold();
     drawNext();
   }
-
   function updateScore() {
     document.getElementById('score').textContent = `SCORE:${String(player.score).padStart(12, '0')}`;
     document.getElementById('level').textContent = `LV:${String(player.level).padStart(3, '0')}`;
   }
-
   let dropCounter = 0;
   let dropInterval = 1000;
   let lastTime = 0;
@@ -320,7 +298,6 @@ document.addEventListener("DOMContentLoaded", () => {
     drawGhost();
     drawMatrix(player.matrix, player.pos);
   }
-
   function update(time = 0) {
     if (pause) return;
     const deltaTime = time - lastTime;
@@ -376,6 +353,47 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.tabIndex = 1;
   canvas.style.outline = "none";
   canvas.focus();
+
+  // ----------★ スマホ用：スワイプ＆タップ操作 ★----------
+  let touchStartX = null, touchStartY = null, moved = false;
+  function isMobile() {
+    return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+  }
+  if (isMobile()) {
+    canvas.addEventListener("touchstart", e => {
+      if (pause) return;
+      if (e.touches.length > 1) return;
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      moved = false;
+    });
+    canvas.addEventListener("touchmove", e => {
+      if (pause) return;
+      if (e.touches.length > 1) return;
+      const t = e.touches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+      if (moved) return;
+      if (absDx > 30 && absDx > absDy) {
+        if (dx > 0) playerMove(1);
+        else playerMove(-1);
+        moved = true;
+      } else if (absDy > 30 && absDy > absDx) {
+        if (dy > 0) playerDrop();
+        else playerHardDrop();
+        moved = true;
+      }
+    });
+    canvas.addEventListener("touchend", e => {
+      if (pause) return;
+      if (!moved) playerRotate(1);
+      moved = false;
+    });
+  }
+  // -------------------------------------------------------
 
   for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
