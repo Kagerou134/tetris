@@ -397,55 +397,79 @@ document.addEventListener("DOMContentLoaded", () => {
     return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
   }
 
-  if (isMobile()) {
-    // --- ブロック横ドラッグ移動 ---
-    canvas.addEventListener("touchstart", e => {
-      if (pause) return;
-      if (e.touches.length > 1) return;
-      dragStartX = e.touches[0].clientX;
-      dragStartPosX = player.pos.x;
-      dragging = false;
-    });
-    canvas.addEventListener("touchmove", e => {
-      if (pause) return;
-      if (e.touches.length > 1) return;
-      const t = e.touches[0];
-      const deltaX = t.clientX - dragStartX;
-      if (Math.abs(deltaX) > 8) {
-        dragging = true;
-        let move = Math.round(deltaX / (canvas.width / COLS));
-        let newX = dragStartPosX + move;
-        newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
+ // ==== スマホ用操作を公式準拠に上書き！ ====
+if (isMobile()) {
+  let startX = 0, startY = 0, startTime = 0;
+  let lastMoveX = 0;
+  let moved = false;
+
+  canvas.addEventListener("touchstart", e => {
+    if (pause) return;
+    if (e.touches.length > 1) return;
+    const t = e.touches[0];
+    startX = lastMoveX = t.clientX;
+    startY = t.clientY;
+    startTime = Date.now();
+    moved = false;
+  });
+
+  canvas.addEventListener("touchmove", e => {
+    if (pause) return;
+    if (e.touches.length > 1) return;
+    const t = e.touches[0];
+    let dx = t.clientX - lastMoveX;
+    let totalDx = t.clientX - startX;
+    let dy = t.clientY - startY;
+
+    // 横移動（1マス単位で追従。端までしっかり。）
+    if (Math.abs(totalDx) > 10 && Math.abs(totalDx) > Math.abs(dy)) {
+      let move = Math.round(totalDx / (canvas.width / COLS));
+      let newX = player.pos.x + move;
+      newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
+      if (player.pos.x !== newX) {
         player.pos.x = newX;
         draw();
+        moved = true;
+        lastMoveX = t.clientX;
       }
-      e.preventDefault();
-    });
-    // --- タップ：回転 or ダブルタップ：ハードドロップ ---
-    canvas.addEventListener("touchend", e => {
-      if (pause) return;
-      if (!dragging) {
-        const now = Date.now();
-        if (now - lastTapTime < 300) {
-          playerHardDrop();
-          lastTapTime = 0;
-          if (tapTimeout) clearTimeout(tapTimeout);
-        } else {
-          tapTimeout = setTimeout(() => {
-            playerRotate(1);
-            draw();
-          }, 300);
-          lastTapTime = now;
-        }
-      }
-      dragging = false;
-    });
-    // --- HOLDボタンもタッチ対応 ---
-    document.querySelector('[data-key="c"]').addEventListener("touchstart", e => {
-      if (pause) return;
+    }
+    // 下方向スライド（20px以上でソフトドロップ）
+    if (dy > 20 && Math.abs(dy) > Math.abs(totalDx) && !moved) {
+      playerDrop();
+      draw();
+      moved = true;
+    }
+    e.preventDefault();
+  });
+
+  canvas.addEventListener("touchend", e => {
+    if (pause) return;
+    const endTime = Date.now();
+    const t = e.changedTouches[0];
+    let dx = t.clientX - startX;
+    let dy = t.clientY - startY;
+    let absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+    // --- ハードドロップ判定 ---
+    if (dy > 40 && absDy > absDx && (endTime - startTime) < 200) {
+      playerHardDrop();
+      draw();
+      return;
+    }
+
+    // --- 上にフリックでホールド ---
+    if (dy < -40 && absDy > absDx && (endTime - startTime) < 200) {
       playerHold();
       draw();
-      e.preventDefault();
-    });
-  }
-});
+      return;
+    }
+
+    // --- タップ(ほぼ動かさない)で回転 ---
+    if (absDx < 10 && absDy < 10 && (endTime - startTime) < 200) {
+      playerRotate(1);
+      draw();
+      return;
+    }
+  });
+}
+
