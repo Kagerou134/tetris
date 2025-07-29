@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById('board');
 
-  // ====== スマホ対応リサイズ ======
+  // ============ スマホ対応：盤面リサイズ ============
   function resizeForMobile() {
     if (window.innerWidth < 800) {
       let w = Math.floor(Math.min(window.innerWidth * 0.97, 380));
@@ -9,20 +9,30 @@ document.addEventListener("DOMContentLoaded", () => {
       w -= w % 12;
       canvas.width = w;
       canvas.height = w * (20/12);
+      // HOLD/NEXTも拡大
+      holdCanvas.width = holdCanvas.height = Math.floor(w / 3.2);
+      nextCanvases.forEach(cnv => {
+        cnv.width = cnv.height = Math.floor(w / 3.2);
+      });
     } else {
       canvas.width = 240;
       canvas.height = 400;
+      holdCanvas.width = holdCanvas.height = 80;
+      nextCanvases.forEach(cnv => {
+        cnv.width = cnv.height = 80;
+      });
     }
   }
-
-  // 盤面・リサイズ・再描画の一括処理
+  // 盤面リサイズ時に再描画も
   function smartResizeAndDraw() {
     resizeForMobile();
     draw();
   }
-
+  // 初回・リサイズ時
   resizeForMobile();
   window.addEventListener('resize', smartResizeAndDraw);
+
+  // ============ ゲームロジック ============
 
   const context = canvas.getContext('2d');
   const ROWS = 20;
@@ -53,7 +63,6 @@ document.addEventListener("DOMContentLoaded", () => {
       case 'Z': return [[7,7,0],[0,7,7]];
     }
   }
-
   function shuffleBag() {
     const types = pieces.split('');
     for (let i = types.length - 1; i > 0; i--) {
@@ -62,18 +71,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return types;
   }
-
   function getNextPiece() {
     if (bag.length === 0) bag = shuffleBag();
     return createPiece(bag.pop());
   }
-
   function createMatrix(w, h) {
     const matrix = [];
     while (h--) matrix.push(new Array(w).fill(0));
     return matrix;
   }
-
   const player = {
     pos: {x: 0, y: 0},
     matrix: null,
@@ -84,11 +90,11 @@ document.addEventListener("DOMContentLoaded", () => {
     next: [],
   };
 
-  function drawMatrix(matrix, offset, ctx = context) {
-    // 必ず整数blockSize
-    const blockSize = (ctx === context)
-      ? Math.floor(canvas.width / COLS)
-      : 10;
+  // --- サイズ自動対応（HOLD/NEXTもblockSize可変）---
+  function drawMatrix(matrix, offset, ctx = context, customBlockSize = null) {
+    // 盤面は幅÷12、HOLD/NEXTはcanvas幅÷4
+    const blockSize = customBlockSize ??
+      ((ctx === context) ? Math.floor(canvas.width / COLS) : Math.floor(ctx.canvas.width / 4));
     matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
@@ -121,7 +127,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (y > arena.length) return null;
     }
   }
-
   function drawGhost() {
     const ghostY = getGhostY();
     if (ghostY === null) return;
@@ -145,20 +150,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     context.restore();
   }
-
   function drawHold() {
     holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
     if (player.hold) drawMatrix(player.hold, {x: 1, y: 1}, holdCtx);
   }
-
   function drawNext() {
     player.next.forEach((matrix, i) => {
       const ctx = nextCanvases[i].getContext('2d');
-      ctx.clearRect(0, 0, 80, 80);
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       drawMatrix(matrix, {x: 1, y: 1}, ctx);
     });
   }
-
   function collide(arena, player) {
     const m = player.matrix;
     const o = player.pos;
@@ -169,7 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return false;
   }
-
   function merge(arena, player) {
     player.matrix.forEach((row, y) => {
       row.forEach((value, x) => {
@@ -177,7 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
-
   function rotate(matrix, dir) {
     const N = matrix.length;
     const M = matrix[0].length;
@@ -200,7 +200,6 @@ document.addEventListener("DOMContentLoaded", () => {
     matrix.length = 0;
     res.forEach(row => matrix.push(row));
   }
-
   function playerRotate(dir) {
     const pos = player.pos.x;
     let offset = 1;
@@ -215,7 +214,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
-
   function sweepLines() {
     let lines = 0;
     outer: for (let y = ROWS - 1; y >= 0; y--) {
@@ -240,7 +238,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     player.level = Math.floor(player.score / 1000);
   }
-
   function playerDrop() {
     player.pos.y++;
     softDropDistance++;
@@ -255,7 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     dropCounter = 0;
   }
-
   function playerHardDrop() {
     let drop = 0;
     while (!collide(arena, player)) {
@@ -271,12 +267,10 @@ document.addEventListener("DOMContentLoaded", () => {
     playerReset();
     dropCounter = 0;
   }
-
   function playerMove(dir) {
     player.pos.x += dir;
     if (collide(arena, player)) player.pos.x -= dir;
   }
-
   function playerReset() {
     player.matrix = player.next.shift();
     while (player.next.length < 4) player.next.push(getNextPiece());
@@ -293,9 +287,8 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     drawHold();
     updateScore();
-    draw(); // ★描画を確実に呼ぶ！
+    draw(); // 確実に盤面更新
   }
-
   function playerHold() {
     if (player.hasHeld) return;
     const temp = player.hold;
@@ -313,7 +306,6 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     draw();
   }
-
   function updateScore() {
     document.getElementById('score').textContent = `SCORE:${String(player.score).padStart(12, '0')}`;
     document.getElementById('level').textContent = `LV:${String(player.level).padStart(3, '0')}`;
@@ -394,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
   for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
 
-  // ==== スマホ用ドラッグ&タップ ====
+  // ==== スマホ用：ドラッグ&タップ&ホールドUI対応 ====
   let dragStartX = 0;
   let dragStartPosX = 0;
   let dragging = false;
@@ -406,6 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (isMobile()) {
+    // --- ブロック横ドラッグ移動 ---
     canvas.addEventListener("touchstart", e => {
       if (pause) return;
       if (e.touches.length > 1) return;
@@ -428,6 +421,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       e.preventDefault();
     });
+    // --- タップ：回転 or ダブルタップ：ハードドロップ ---
     canvas.addEventListener("touchend", e => {
       if (pause) return;
       if (!dragging) {
@@ -445,6 +439,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       dragging = false;
+    });
+    // --- HOLDボタンもタッチ対応 ---
+    document.querySelector('[data-key="c"]').addEventListener("touchstart", e => {
+      if (pause) return;
+      playerHold();
+      draw();
+      e.preventDefault();
     });
   }
 });
