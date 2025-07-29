@@ -1,22 +1,28 @@
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById('board');
-  // ==== 【スマホリサイズ対応】 ====
+
+  // ====== スマホ対応リサイズ ======
   function resizeForMobile() {
-    // スマホなら盤面幅を画面サイズに合わせる
     if (window.innerWidth < 800) {
-      let w = Math.min(window.innerWidth * 0.97, 380);
+      let w = Math.floor(Math.min(window.innerWidth * 0.97, 380));
+      // 必ず12の倍数（ブロック幅が整数）に調整
+      w -= w % 12;
       canvas.width = w;
-      canvas.height = w * (20/12); // ROWS/COLS比率で計算
+      canvas.height = w * (20/12);
     } else {
       canvas.width = 240;
       canvas.height = 400;
     }
   }
-  resizeForMobile();
-  window.addEventListener('resize', () => {
+
+  // 盤面・リサイズ・再描画の一括処理
+  function smartResizeAndDraw() {
     resizeForMobile();
     draw();
-  });
+  }
+
+  resizeForMobile();
+  window.addEventListener('resize', smartResizeAndDraw);
 
   const context = canvas.getContext('2d');
   const ROWS = 20;
@@ -28,14 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextCanvases = document.querySelectorAll('.next');
 
   const colors = [
-    null,
-    '#00FFFF',    // I
-    '#0000FF',    // J
-    '#FFA500',    // L
-    '#FFFF00',    // O
-    '#00FF00',    // S
-    '#e628e6ff',  // T
-    '#FF0000'     // Z
+    null, '#00FFFF', '#0000FF', '#FFA500', '#FFFF00', '#00FF00', '#e628e6ff', '#FF0000'
   ];
 
   const pieces = 'IJLOSTZ';
@@ -86,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function drawMatrix(matrix, offset, ctx = context) {
-    // --- スマホ時はブロックサイズ自動計算 ---
+    // 必ず整数blockSize
     const blockSize = (ctx === context)
       ? Math.floor(canvas.width / COLS)
       : 10;
@@ -95,15 +94,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (value !== 0) {
           ctx.fillStyle = colors[value] || '#F0F';
           ctx.fillRect(
-            (x + offset.x) * blockSize,
-            (y + offset.y) * blockSize,
+            Math.round((x + offset.x) * blockSize),
+            Math.round((y + offset.y) * blockSize),
             blockSize,
             blockSize
           );
           ctx.strokeStyle = '#222';
           ctx.strokeRect(
-            (x + offset.x) * blockSize,
-            (y + offset.y) * blockSize,
+            Math.round((x + offset.x) * blockSize),
+            Math.round((y + offset.y) * blockSize),
             blockSize,
             blockSize
           );
@@ -136,8 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (value !== 0) {
           context.fillStyle = ghostColor;
           context.fillRect(
-            (x + ghostPos.x) * blockSize,
-            (y + ghostPos.y) * blockSize,
+            Math.round((x + ghostPos.x) * blockSize),
+            Math.round((y + ghostPos.y) * blockSize),
             blockSize,
             blockSize
           );
@@ -294,6 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     drawHold();
     updateScore();
+    draw(); // ★描画を確実に呼ぶ！
   }
 
   function playerHold() {
@@ -311,6 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
     player.hasHeld = true;
     drawHold();
     drawNext();
+    draw();
   }
 
   function updateScore() {
@@ -326,8 +327,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawMatrix(arena, {x: 0, y: 0});
-    drawGhost();
-    drawMatrix(player.matrix, player.pos);
+    if (player.matrix) {
+      drawGhost();
+      drawMatrix(player.matrix, player.pos);
+    }
   }
 
   function update(time = 0) {
@@ -343,12 +346,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("keydown", e => {
     if (pause) return;
     switch (e.key) {
-      case 'ArrowLeft': playerMove(-1); break;
-      case 'ArrowRight': playerMove(1); break;
-      case 'ArrowDown': playerDrop(); break;
+      case 'ArrowLeft': playerMove(-1); draw(); break;
+      case 'ArrowRight': playerMove(1); draw(); break;
+      case 'ArrowDown': playerDrop(); draw(); break;
       case ' ': case 'Spacebar': case 'Space': playerHardDrop(); break;
-      case 'z': case 'Z': playerRotate(-1); break;
-      case 'x': case 'X': playerRotate(1); break;
+      case 'z': case 'Z': playerRotate(-1); draw(); break;
+      case 'x': case 'X': playerRotate(1); draw(); break;
       case 'c': case 'C': playerHold(); break;
     }
   });
@@ -358,6 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!pause) update();
     document.getElementById("play").textContent = pause ? "PLAY" : "PAUSE";
     canvas.focus();
+    draw();
   });
 
   document.getElementById("reset").addEventListener("click", () => {
@@ -369,6 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
     playerReset();
     pause = false;
     updateScore();
+    draw();
     update();
     document.getElementById("play").textContent = "PAUSE";
     canvas.focus();
@@ -389,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
   for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
 
-  // ==== 【スマホ用：ドラッグ＆ダブルタップ操作追加】 ====
+  // ==== スマホ用ドラッグ&タップ ====
   let dragStartX = 0;
   let dragStartPosX = 0;
   let dragging = false;
@@ -401,7 +406,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (isMobile()) {
-    // ドラッグ開始
     canvas.addEventListener("touchstart", e => {
       if (pause) return;
       if (e.touches.length > 1) return;
@@ -409,7 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
       dragStartPosX = player.pos.x;
       dragging = false;
     });
-    // ドラッグ中
     canvas.addEventListener("touchmove", e => {
       if (pause) return;
       if (e.touches.length > 1) return;
@@ -425,18 +428,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       e.preventDefault();
     });
-    // 指を離したとき：シングルタップで回転／ダブルタップでハードドロップ
     canvas.addEventListener("touchend", e => {
       if (pause) return;
       if (!dragging) {
         const now = Date.now();
         if (now - lastTapTime < 300) {
-          // ダブルタップ→ハードドロップ
           playerHardDrop();
           lastTapTime = 0;
           if (tapTimeout) clearTimeout(tapTimeout);
         } else {
-          // シングルタップ→回転（0.3秒後にダブルタップじゃなければ実行）
           tapTimeout = setTimeout(() => {
             playerRotate(1);
             draw();
