@@ -103,32 +103,57 @@ canvas {
   cursor: pointer;
 }
 
-@media (max-width: 600px) {
+/* 既存のもの＋以下を追記/調整 */
+@media (max-width: 800px) {
   .container {
-    padding: 0;
     max-width: 100vw;
-    margin: 0 auto;
+    padding: 0 2vw;
   }
   .game-area {
     flex-direction: column;
     align-items: center;
-  }
-  canvas#board {
-    max-width: 98vw;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-    box-sizing: border-box;
+    margin-top: 2vw;
+    gap: 3vw;
   }
   .side {
-    margin: 0 0 10px 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 1vw 0;
+    width: 100vw;
+  }
+  .side h2 {
+    font-size: 1.1em;
+    margin: 0 6px 0 0;
+  }
+  #next-blocks {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+  }
+  canvas#board {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    height: auto !important;
+    margin: 0 auto 2vw auto;
+    display: block;
+    background: #000;
+  }
+  .controls, .mobile-keys {
+    width: 100vw;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.7em;
+  }
+  .row {
+    justify-content: center;
+    gap: 8px;
+  }
+  .side canvas,
+  .next {
+    width: 48px !important;
+    height: 48px !important;
   }
 }
-canvas {
-  width: auto !important;
-  height: auto !important;
-  display: block;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
