@@ -1,47 +1,20 @@
+/* === ベーススタイル === */
 body {
   margin: 0;
-  padding: 24px;
   background: #111;
   color: #fff;
   font-family: 'Courier New', monospace;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   min-height: 100vh;
-  box-sizing: border-box;
 }
 
 .container {
   max-width: 1000px;
-  padding-top: 100px; /* HOLD固定分の余白 */
-  width: 100%;
+  padding: 10px;
 }
 
-/* HOLDを固定表示 */
-#hold-fixed {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  text-align: center;
-  background: #111;
-  border: 1px solid #666;
-  padding: 4px 8px;
-  border-radius: 8px;
-}
-
-#hold-fixed h2 {
-  margin: 0;
-  font-size: 1em;
-}
-
-#hold-fixed canvas {
-  display: block;
-  margin: 4px auto 0;
-}
-
-/* Header */
 header {
   display: flex;
   justify-content: space-between;
@@ -68,7 +41,6 @@ header {
   color: yellow;
 }
 
-/* Game Area */
 .game-area {
   display: flex;
   justify-content: center;
@@ -132,17 +104,15 @@ canvas {
   cursor: pointer;
 }
 
-/* レスポンシブ対応 */
+/* === スマホ専用レイアウト修正 === */
 @media (max-width: 800px) {
   body {
-    padding: 12vw 2vw;
-    flex-direction: column;
-    align-items: center;
+    padding: 10vw 0;
   }
 
   .container {
-    width: 100%;
-    padding-top: 140px; /* HOLD固定分の余白 */
+    max-width: 100vw;
+    padding: 0 2vw;
   }
 
   .game-area {
@@ -157,7 +127,7 @@ canvas {
     align-items: center;
     justify-content: center;
     margin: 0 0 1vw 0;
-    width: 100%;
+    width: 100vw;
   }
 
   .side h2 {
@@ -198,12 +168,5 @@ canvas {
   .next {
     width: 48px !important;
     height: 48px !important;
-  }
-
-  #hold-fixed {
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 4px 6px;
   }
 }
