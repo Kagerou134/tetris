@@ -298,9 +298,10 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     draw();
   }
+  
   function updateScore() {
-   document.getElementById('score').textContent = `SCORE:${String(player.score).padStart(12, '0')}`;
-　 document.getElementById('level').textContent = `LV:${String(player.level).padStart(3, '0')}`;
+    document.getElementById('score').textContent = SCORE:${String(player.score).padStart(12, '0')};
+    document.getElementById('level').textContent = LV:${String(player.level).padStart(3, '0')};
   }
 
   let dropCounter = 0;
