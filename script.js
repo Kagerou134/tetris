@@ -4,13 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const holdCtx = holdCanvas.getContext('2d');
   const nextCanvases = document.querySelectorAll('.next');
 
-  // ============ スマホ対応：盤面リサイズ ============
   function resizeForMobile() {
     if (window.innerWidth < 800) {
       let w = Math.floor(Math.min(window.innerWidth * 0.7, 260));
       w -= w % 12;
       canvas.width = w;
-      canvas.height = w * (20/12);
+      canvas.height = w * (20 / 12);
       holdCanvas.width = holdCanvas.height = Math.floor(w / 3.2);
       nextCanvases.forEach(cnv => {
         cnv.width = cnv.height = Math.floor(w / 3.2);
@@ -24,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
   function smartResizeAndDraw() {
     resizeForMobile();
     draw();
@@ -31,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
   resizeForMobile();
   window.addEventListener('resize', smartResizeAndDraw);
 
-  // ============ ゲームロジック ============
   const context = canvas.getContext('2d');
   const ROWS = 20;
   const COLS = 12;
@@ -57,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case 'Z': return [[7,7,0],[0,7,7]];
     }
   }
+
   function shuffleBag() {
     const types = pieces.split('');
     for (let i = types.length - 1; i > 0; i--) {
@@ -65,15 +65,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return types;
   }
+
   function getNextPiece() {
     if (bag.length === 0) bag = shuffleBag();
     return createPiece(bag.pop());
   }
+
   function createMatrix(w, h) {
     const matrix = [];
     while (h--) matrix.push(new Array(w).fill(0));
     return matrix;
   }
+
   const player = {
     pos: {x: 0, y: 0},
     matrix: null,
@@ -119,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (y > arena.length) return null;
     }
   }
+
   function drawGhost() {
     const ghostY = getGhostY();
     if (ghostY === null) return;
@@ -142,10 +146,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     context.restore();
   }
+
   function drawHold() {
     holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
     if (player.hold) drawMatrix(player.hold, {x: 1, y: 1}, holdCtx);
   }
+
   function drawNext() {
     player.next.forEach((matrix, i) => {
       const ctx = nextCanvases[i].getContext('2d');
@@ -153,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
       drawMatrix(matrix, {x: 1, y: 1}, ctx);
     });
   }
+
   function collide(arena, player) {
     const m = player.matrix;
     const o = player.pos;
@@ -163,6 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return false;
   }
+
   function merge(arena, player) {
     player.matrix.forEach((row, y) => {
       row.forEach((value, x) => {
@@ -170,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
   function rotate(matrix, dir) {
     const N = matrix.length;
     const M = matrix[0].length;
@@ -192,6 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     matrix.length = 0;
     res.forEach(row => matrix.push(row));
   }
+
   function playerRotate(dir) {
     const pos = player.pos.x;
     let offset = 1;
@@ -206,6 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
+
   function sweepLines() {
     let lines = 0;
     outer: for (let y = ROWS - 1; y >= 0; y--) {
@@ -230,6 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     player.level = Math.floor(player.score / 1000);
   }
+
   function playerDrop() {
     player.pos.y++;
     softDropDistance++;
@@ -244,6 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     dropCounter = 0;
   }
+
   function playerHardDrop() {
     let drop = 0;
     while (!collide(arena, player)) {
@@ -259,10 +272,12 @@ document.addEventListener("DOMContentLoaded", () => {
     playerReset();
     dropCounter = 0;
   }
+
   function playerMove(dir) {
     player.pos.x += dir;
     if (collide(arena, player)) player.pos.x -= dir;
   }
+
   function playerReset() {
     player.matrix = player.next.shift();
     while (player.next.length < 4) player.next.push(getNextPiece());
@@ -281,6 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateScore();
     draw();
   }
+
   function playerHold() {
     if (player.hasHeld) return;
     const temp = player.hold;
@@ -298,6 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     draw();
   }
+
   function updateScore() {
     document.getElementById('score').textContent = `SCORE:${String(player.score).padStart(12, '0')}`;
     document.getElementById('level').textContent = `LV:${String(player.level).padStart(3, '0')}`;
@@ -333,6 +350,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case 'ArrowLeft': playerMove(-1); draw(); break;
       case 'ArrowRight': playerMove(1); draw(); break;
       case 'ArrowDown': playerDrop(); draw(); break;
+      case 'Enter': playerHardDrop(); break;
       case ' ': case 'Spacebar': case 'Space': playerHardDrop(); break;
       case 'z': case 'Z': playerRotate(-1); draw(); break;
       case 'x': case 'X': playerRotate(1); draw(); break;
@@ -377,86 +395,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
-
-  // ==== スマホ用：ドラッグ&タップ&ホールドUI対応 ====
-  let dragPixelBuf = 0;
-  function isMobile() {
-    return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
-  }
-
-  if (isMobile()) {
-    let startX = 0, startY = 0, startTime = 0;
-    let lastMoveX = 0;
-    let moved = false;
-
-    canvas.addEventListener("touchstart", e => {
-      if (pause) return;
-      if (e.touches.length > 1) return;
-      const t = e.touches[0];
-      startX = lastMoveX = t.clientX;
-      startY = t.clientY;
-      startTime = Date.now();
-      moved = false;
-      dragPixelBuf = 0;
-    });
-
-    canvas.addEventListener("touchmove", e => {
-      if (pause) return;
-      if (e.touches.length > 1) return;
-      const t = e.touches[0];
-      let dx = t.clientX - lastMoveX;
-      let dy = t.clientY - startY;
-
-      dragPixelBuf += dx;
-      let blockW = canvas.width / COLS * 0.9; // ←調整用
-      while (Math.abs(dragPixelBuf) > blockW) {
-        if (dragPixelBuf > 0) {
-          playerMove(1);
-          dragPixelBuf -= blockW;
-        } else if (dragPixelBuf < 0) {
-          playerMove(-1);
-          dragPixelBuf += blockW;
-        }
-        moved = true;
-        draw();
-      }
-      lastMoveX = t.clientX;
-
-      // ソフトドロップ
-      if (dy > 20 && !moved) {
-        playerDrop();
-        draw();
-        moved = true;
-      }
-      e.preventDefault();
-    });
-
-    canvas.addEventListener("touchend", e => {
-      if (pause) return;
-      const endTime = Date.now();
-      const t = e.changedTouches[0];
-      let dx = t.clientX - startX;
-      let dy = t.clientY - startY;
-      let absDx = Math.abs(dx), absDy = Math.abs(dy);
-
-      // ハードドロップ
-      if (dy > 40 && absDy > absDx && (endTime - startTime) < 200) {
-        playerHardDrop();
-        draw();
-        return;
-      }
-      // 上フリックでホールド
-      if (dy < -40 && absDy > absDx && (endTime - startTime) < 200) {
-        playerHold();
-        draw();
-        return;
-      }
-      // タップで回転
-      if (absDx < 10 && absDy < 10 && (endTime - startTime) < 200) {
-        playerRotate(1);
-        draw();
-        return;
-      }
-    });
-  }
 });
