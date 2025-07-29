@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============ スマホ対応：盤面リサイズ ============
   function resizeForMobile() {
     if (window.innerWidth < 800) {
-      let w = Math.floor(Math.min(window.innerWidth * 0.97, 380));
+      let w = Math.floor(Math.min(window.innerWidth * 0.85, 320)); // 画面幅の85％ or 最大320px
       // 必ず12の倍数（ブロック幅が整数）に調整
       w -= w % 12;
       canvas.width = w;
