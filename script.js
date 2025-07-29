@@ -397,6 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
   }
 
+  let dragPixelBuf = 0;
  // ==== スマホ用操作を公式準拠に上書き！ ====
 if (isMobile()) {
   let startX = 0, startY = 0, startTime = 0;
@@ -411,28 +412,41 @@ if (isMobile()) {
     startY = t.clientY;
     startTime = Date.now();
     moved = false;
+    dragPixelBuf = 0;
   });
 
   canvas.addEventListener("touchmove", e => {
-    if (pause) return;
-    if (e.touches.length > 1) return;
-    const t = e.touches[0];
-    let dx = t.clientX - lastMoveX;
-    let totalDx = t.clientX - startX;
-    let dy = t.clientY - startY;
+  if (pause) return;
+  if (e.touches.length > 1) return;
+  const t = e.touches[0];
+  let dx = t.clientX - lastMoveX;
+  let dy = t.clientY - startY;
 
-    // 横移動（1マス単位で追従。端までしっかり。）
-    if (Math.abs(totalDx) > 24 && Math.abs(totalDx) > Math.abs(dy)) {
-  let move = Math.round(totalDx / (canvas.width / COLS));
-      let newX = player.pos.x + move;
-      newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
-      if (player.pos.x !== newX) {
-        player.pos.x = newX;
-        draw();
-        moved = true;
-        lastMoveX = t.clientX;
-      }
+  dragPixelBuf += dx;
+  let blockW = canvas.width / COLS * 0.9; // ← 0.9は好みで調整
+
+  while (Math.abs(dragPixelBuf) > blockW) {
+    if (dragPixelBuf > 0) {
+      playerMove(1);
+      dragPixelBuf -= blockW;
+    } else if (dragPixelBuf < 0) {
+      playerMove(-1);
+      dragPixelBuf += blockW;
     }
+    moved = true;
+    draw();
+  }
+  lastMoveX = t.clientX;
+
+  // ↓ 縦の処理（ソフトドロップ）は今まで通り
+  if (dy > 20 && !moved) {
+    playerDrop();
+    draw();
+    moved = true;
+  }
+  e.preventDefault();
+});
+
     // 下方向スライド（20px以上でソフトドロップ）
     if (dy > 20 && Math.abs(dy) > Math.abs(totalDx) && !moved) {
       playerDrop();
