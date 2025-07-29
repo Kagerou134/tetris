@@ -1,36 +1,43 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const ROWS = 20;
-  const COLS = 12;
-  const DEFAULT_BLOCK_SIZE = 20;
   const canvas = document.getElementById('board');
-  let blockSize = DEFAULT_BLOCK_SIZE;
-
-  // スマホでも見切れないように盤面サイズ自動調整
-  function resizeCanvasForMobile() {
+  // ==== 【スマホリサイズ対応】 ====
+  function resizeForMobile() {
+    // スマホなら盤面幅を画面サイズに合わせる
     if (window.innerWidth < 800) {
       let w = Math.min(window.innerWidth * 0.97, 380);
-      blockSize = Math.floor(w / COLS);
-      canvas.width = blockSize * COLS;
-      canvas.height = blockSize * ROWS;
+      canvas.width = w;
+      canvas.height = w * (20/12); // ROWS/COLS比率で計算
     } else {
-      blockSize = DEFAULT_BLOCK_SIZE;
-      canvas.width = COLS * blockSize;
-      canvas.height = ROWS * blockSize;
+      canvas.width = 240;
+      canvas.height = 400;
     }
   }
-  resizeCanvasForMobile();
+  resizeForMobile();
   window.addEventListener('resize', () => {
-    resizeCanvasForMobile();
+    resizeForMobile();
     draw();
   });
 
   const context = canvas.getContext('2d');
+  const ROWS = 20;
+  const COLS = 12;
+  const arena = createMatrix(COLS, ROWS);
+
   const holdCanvas = document.getElementById('hold');
   const holdCtx = holdCanvas.getContext('2d');
   const nextCanvases = document.querySelectorAll('.next');
+
   const colors = [
-    null, '#00FFFF', '#0000FF', '#FFA500', '#FFFF00', '#00FF00', '#e628e6ff', '#FF0000'
+    null,
+    '#00FFFF',    // I
+    '#0000FF',    // J
+    '#FFA500',    // L
+    '#FFFF00',    // O
+    '#00FF00',    // S
+    '#e628e6ff',  // T
+    '#FF0000'     // Z
   ];
+
   const pieces = 'IJLOSTZ';
   let bag = [];
   let combo = 0;
@@ -47,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case 'Z': return [[7,7,0],[0,7,7]];
     }
   }
+
   function shuffleBag() {
     const types = pieces.split('');
     for (let i = types.length - 1; i > 0; i--) {
@@ -55,16 +63,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return types;
   }
+
   function getNextPiece() {
     if (bag.length === 0) bag = shuffleBag();
     return createPiece(bag.pop());
   }
+
   function createMatrix(w, h) {
     const matrix = [];
     while (h--) matrix.push(new Array(w).fill(0));
     return matrix;
   }
-  const arena = createMatrix(COLS, ROWS);
+
   const player = {
     pos: {x: 0, y: 0},
     matrix: null,
@@ -74,28 +84,34 @@ document.addEventListener("DOMContentLoaded", () => {
     hasHeld: false,
     next: [],
   };
+
   function drawMatrix(matrix, offset, ctx = context) {
-    const bs = (ctx === context) ? blockSize : 10;
-    if (!matrix) return;
+    // --- スマホ時はブロックサイズ自動計算 ---
+    const blockSize = (ctx === context)
+      ? Math.floor(canvas.width / COLS)
+      : 10;
     matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
           ctx.fillStyle = colors[value] || '#F0F';
           ctx.fillRect(
-            (x + offset.x) * bs,
-            (y + offset.y) * bs,
-            bs, bs
+            (x + offset.x) * blockSize,
+            (y + offset.y) * blockSize,
+            blockSize,
+            blockSize
           );
           ctx.strokeStyle = '#222';
           ctx.strokeRect(
-            (x + offset.x) * bs,
-            (y + offset.y) * bs,
-            bs, bs
+            (x + offset.x) * blockSize,
+            (y + offset.y) * blockSize,
+            blockSize,
+            blockSize
           );
         }
       });
     });
   }
+
   function getGhostY() {
     let y = player.pos.y;
     while (true) {
@@ -106,33 +122,36 @@ document.addEventListener("DOMContentLoaded", () => {
       if (y > arena.length) return null;
     }
   }
+
   function drawGhost() {
-    if (!player.matrix) return;
     const ghostY = getGhostY();
     if (ghostY === null) return;
     const ghostPos = {x: player.pos.x, y: ghostY};
+    const blockSize = Math.floor(canvas.width / COLS);
     context.save();
     context.globalAlpha = 0.5;
     const ghostColor = "#B0B0B0";
-    const bs = blockSize;
     player.matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
           context.fillStyle = ghostColor;
           context.fillRect(
-            (x + ghostPos.x) * bs,
-            (y + ghostPos.y) * bs,
-            bs, bs
+            (x + ghostPos.x) * blockSize,
+            (y + ghostPos.y) * blockSize,
+            blockSize,
+            blockSize
           );
         }
       });
     });
     context.restore();
   }
+
   function drawHold() {
     holdCtx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
     if (player.hold) drawMatrix(player.hold, {x: 1, y: 1}, holdCtx);
   }
+
   function drawNext() {
     player.next.forEach((matrix, i) => {
       const ctx = nextCanvases[i].getContext('2d');
@@ -140,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
       drawMatrix(matrix, {x: 1, y: 1}, ctx);
     });
   }
+
   function collide(arena, player) {
     const m = player.matrix;
     const o = player.pos;
@@ -150,6 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return false;
   }
+
   function merge(arena, player) {
     player.matrix.forEach((row, y) => {
       row.forEach((value, x) => {
@@ -157,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
   function rotate(matrix, dir) {
     const N = matrix.length;
     const M = matrix[0].length;
@@ -179,8 +201,8 @@ document.addEventListener("DOMContentLoaded", () => {
     matrix.length = 0;
     res.forEach(row => matrix.push(row));
   }
+
   function playerRotate(dir) {
-    if (!player.matrix) return;
     const pos = player.pos.x;
     let offset = 1;
     rotate(player.matrix, dir);
@@ -193,8 +215,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
     }
-    draw();
   }
+
   function sweepLines() {
     let lines = 0;
     outer: for (let y = ROWS - 1; y >= 0; y--) {
@@ -219,8 +241,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     player.level = Math.floor(player.score / 1000);
   }
+
   function playerDrop() {
-    if (!player.matrix) return;
     player.pos.y++;
     softDropDistance++;
     if (collide(arena, player)) {
@@ -234,8 +256,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     dropCounter = 0;
   }
+
   function playerHardDrop() {
-    if (!player.matrix) return;
     let drop = 0;
     while (!collide(arena, player)) {
       player.pos.y++;
@@ -250,12 +272,12 @@ document.addEventListener("DOMContentLoaded", () => {
     playerReset();
     dropCounter = 0;
   }
+
   function playerMove(dir) {
-    if (!player.matrix) return;
     player.pos.x += dir;
     if (collide(arena, player)) player.pos.x -= dir;
-    draw();
   }
+
   function playerReset() {
     player.matrix = player.next.shift();
     while (player.next.length < 4) player.next.push(getNextPiece());
@@ -272,8 +294,8 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     drawHold();
     updateScore();
-    draw();
   }
+
   function playerHold() {
     if (player.hasHeld) return;
     const temp = player.hold;
@@ -289,12 +311,13 @@ document.addEventListener("DOMContentLoaded", () => {
     player.hasHeld = true;
     drawHold();
     drawNext();
-    draw();
   }
+
   function updateScore() {
     document.getElementById('score').textContent = `SCORE:${String(player.score).padStart(12, '0')}`;
     document.getElementById('level').textContent = `LV:${String(player.level).padStart(3, '0')}`;
   }
+
   let dropCounter = 0;
   let dropInterval = 1000;
   let lastTime = 0;
@@ -304,8 +327,9 @@ document.addEventListener("DOMContentLoaded", () => {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawMatrix(arena, {x: 0, y: 0});
     drawGhost();
-    if (player.matrix) drawMatrix(player.matrix, player.pos);
+    drawMatrix(player.matrix, player.pos);
   }
+
   function update(time = 0) {
     if (pause) return;
     const deltaTime = time - lastTime;
@@ -362,7 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.style.outline = "none";
   canvas.focus();
 
-  // ---- スマホ用：なぞって移動/タップで回転/ダブルタップでハードドロップ ----
+  for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
+  playerReset();
+
+  // ==== 【スマホ用：ドラッグ＆ダブルタップ操作追加】 ====
   let dragStartX = 0;
   let dragStartPosX = 0;
   let dragging = false;
@@ -374,25 +401,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (isMobile()) {
-    // タッチスタート
+    // ドラッグ開始
     canvas.addEventListener("touchstart", e => {
       if (pause) return;
       if (e.touches.length > 1) return;
-
       dragStartX = e.touches[0].clientX;
       dragStartPosX = player.pos.x;
       dragging = false;
     });
-
-    // タッチムーブ（左右スライド）
+    // ドラッグ中
     canvas.addEventListener("touchmove", e => {
       if (pause) return;
       if (e.touches.length > 1) return;
       const t = e.touches[0];
       const deltaX = t.clientX - dragStartX;
-      if (Math.abs(deltaX) > 10) {
+      if (Math.abs(deltaX) > 8) {
         dragging = true;
-        let move = Math.round(deltaX / blockSize);
+        let move = Math.round(deltaX / (canvas.width / COLS));
         let newX = dragStartPosX + move;
         newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
         player.pos.x = newX;
@@ -400,18 +425,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       e.preventDefault();
     });
-
-    // タッチエンド（タップ検出）
+    // 指を離したとき：シングルタップで回転／ダブルタップでハードドロップ
     canvas.addEventListener("touchend", e => {
       if (pause) return;
       if (!dragging) {
-        // シングルタップかダブルタップか判定
         const now = Date.now();
         if (now - lastTapTime < 300) {
+          // ダブルタップ→ハードドロップ
           playerHardDrop();
           lastTapTime = 0;
           if (tapTimeout) clearTimeout(tapTimeout);
         } else {
+          // シングルタップ→回転（0.3秒後にダブルタップじゃなければ実行）
           tapTimeout = setTimeout(() => {
             playerRotate(1);
             draw();
@@ -422,8 +447,4 @@ document.addEventListener("DOMContentLoaded", () => {
       dragging = false;
     });
   }
-
-  // --- 最初に次ブロック補充＆初期化 ---
-  for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
-  playerReset();
 });
