@@ -5,10 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById('board');
   let blockSize = DEFAULT_BLOCK_SIZE;
 
-  // ------★ 盤面リサイズ＆スケール設定（スマホ対応）★------
+  // スマホでも見切れないように盤面サイズ自動調整
   function resizeCanvasForMobile() {
     if (window.innerWidth < 800) {
-      let w = Math.min(window.innerWidth * 0.97, 380); // 幅最大380px
+      let w = Math.min(window.innerWidth * 0.97, 380);
       blockSize = Math.floor(w / COLS);
       canvas.width = blockSize * COLS;
       canvas.height = blockSize * ROWS;
@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   resizeCanvasForMobile();
   window.addEventListener('resize', () => {
     resizeCanvasForMobile();
-    draw(); // サイズ変更時は即再描画
+    draw();
   });
 
   const context = canvas.getContext('2d');
@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   function drawMatrix(matrix, offset, ctx = context) {
     const bs = (ctx === context) ? blockSize : 10;
+    if (!matrix) return;
     matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
@@ -106,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   function drawGhost() {
+    if (!player.matrix) return;
     const ghostY = getGhostY();
     if (ghostY === null) return;
     const ghostPos = {x: player.pos.x, y: ghostY};
@@ -178,6 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     res.forEach(row => matrix.push(row));
   }
   function playerRotate(dir) {
+    if (!player.matrix) return;
     const pos = player.pos.x;
     let offset = 1;
     rotate(player.matrix, dir);
@@ -190,6 +193,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
     }
+    draw();
   }
   function sweepLines() {
     let lines = 0;
@@ -202,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
       y++;
       lines++;
     }
-    // スコア加点
     const lineScores = [0, 100, 300, 500, 800];
     if (lines > 0) {
       player.score += lineScores[lines] || (lines * 200);
@@ -211,13 +214,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       combo = 0;
     }
-    // パーフェクトクリア
     if (arena.every(row => row.every(cell => cell === 0)) && lines > 0) {
       player.score += 4000;
     }
     player.level = Math.floor(player.score / 1000);
   }
   function playerDrop() {
+    if (!player.matrix) return;
     player.pos.y++;
     softDropDistance++;
     if (collide(arena, player)) {
@@ -232,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dropCounter = 0;
   }
   function playerHardDrop() {
+    if (!player.matrix) return;
     let drop = 0;
     while (!collide(arena, player)) {
       player.pos.y++;
@@ -247,8 +251,10 @@ document.addEventListener("DOMContentLoaded", () => {
     dropCounter = 0;
   }
   function playerMove(dir) {
+    if (!player.matrix) return;
     player.pos.x += dir;
     if (collide(arena, player)) player.pos.x -= dir;
+    draw();
   }
   function playerReset() {
     player.matrix = player.next.shift();
@@ -266,6 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     drawHold();
     updateScore();
+    draw();
   }
   function playerHold() {
     if (player.hasHeld) return;
@@ -282,6 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
     player.hasHeld = true;
     drawHold();
     drawNext();
+    draw();
   }
   function updateScore() {
     document.getElementById('score').textContent = `SCORE:${String(player.score).padStart(12, '0')}`;
@@ -296,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawMatrix(arena, {x: 0, y: 0});
     drawGhost();
-    drawMatrix(player.matrix, player.pos);
+    if (player.matrix) drawMatrix(player.matrix, player.pos);
   }
   function update(time = 0) {
     if (pause) return;
@@ -354,65 +362,68 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.style.outline = "none";
   canvas.focus();
 
+  // ---- スマホ用：なぞって移動/タップで回転/ダブルタップでハードドロップ ----
   let dragStartX = 0;
-let dragStartPosX = 0;
-let dragging = false;
-let lastTapTime = 0;
-let tapTimeout = null;
+  let dragStartPosX = 0;
+  let dragging = false;
+  let lastTapTime = 0;
+  let tapTimeout = null;
 
-if (isMobile()) {
-  // タッチスタート
-  canvas.addEventListener("touchstart", e => {
-    if (pause) return;
-    if (e.touches.length > 1) return;
+  function isMobile() {
+    return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+  }
 
-    dragStartX = e.touches[0].clientX;
-    dragStartPosX = player.pos.x;
-    dragging = false; // タップと区別するため最初はfalse
-  });
+  if (isMobile()) {
+    // タッチスタート
+    canvas.addEventListener("touchstart", e => {
+      if (pause) return;
+      if (e.touches.length > 1) return;
 
-  // タッチムーブ（左右スライドのみ対応）
-  canvas.addEventListener("touchmove", e => {
-    if (pause) return;
-    if (e.touches.length > 1) return;
-    const t = e.touches[0];
-    const deltaX = t.clientX - dragStartX;
-    if (Math.abs(deltaX) > 10) {
-      dragging = true;
-      // 1マス単位で追従
-      let move = Math.round(deltaX / blockSize);
-      let newX = dragStartPosX + move;
-      newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
-      player.pos.x = newX;
-      draw();
-    }
-    e.preventDefault();
-  });
+      dragStartX = e.touches[0].clientX;
+      dragStartPosX = player.pos.x;
+      dragging = false;
+    });
 
-  // タッチエンド（指離しで何も落とさない・タップ検出）
-  canvas.addEventListener("touchend", e => {
-    if (pause) return;
-    if (!dragging) {
-      // シングルタップかダブルタップか判定
-      const now = Date.now();
-      if (now - lastTapTime < 300) {
-        // ダブルタップでハードドロップ
-        playerHardDrop();
-        lastTapTime = 0;
-        if (tapTimeout) clearTimeout(tapTimeout);
-      } else {
-        // シングルタップで回転（0.3秒待ってダブルタップじゃなければ実行）
-        tapTimeout = setTimeout(() => {
-          playerRotate(1);
-          draw();
-        }, 300);
-        lastTapTime = now;
+    // タッチムーブ（左右スライド）
+    canvas.addEventListener("touchmove", e => {
+      if (pause) return;
+      if (e.touches.length > 1) return;
+      const t = e.touches[0];
+      const deltaX = t.clientX - dragStartX;
+      if (Math.abs(deltaX) > 10) {
+        dragging = true;
+        let move = Math.round(deltaX / blockSize);
+        let newX = dragStartPosX + move;
+        newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
+        player.pos.x = newX;
+        draw();
       }
-    }
-    dragging = false;
-  });
-}
+      e.preventDefault();
+    });
 
+    // タッチエンド（タップ検出）
+    canvas.addEventListener("touchend", e => {
+      if (pause) return;
+      if (!dragging) {
+        // シングルタップかダブルタップか判定
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          playerHardDrop();
+          lastTapTime = 0;
+          if (tapTimeout) clearTimeout(tapTimeout);
+        } else {
+          tapTimeout = setTimeout(() => {
+            playerRotate(1);
+            draw();
+          }, 300);
+          lastTapTime = now;
+        }
+      }
+      dragging = false;
+    });
+  }
+
+  // --- 最初に次ブロック補充＆初期化 ---
   for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
 });
