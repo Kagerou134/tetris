@@ -1,4 +1,3 @@
-/* === ベーススタイル === */
 body {
   margin: 0;
   background: #111;
@@ -44,15 +43,16 @@ header {
 .game-area {
   display: flex;
   justify-content: center;
-  align-items: start;
+  align-items: flex-start;
   margin-top: 20px;
+  gap: 30px;
 }
 
 .side {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 10px;
+  gap: 10px;
 }
 
 canvas {
@@ -92,6 +92,7 @@ canvas {
   display: flex;
   gap: 10px;
   margin-top: 5px;
+  justify-content: center;
 }
 
 .row button {
@@ -104,24 +105,21 @@ canvas {
   cursor: pointer;
 }
 
-/* === スマホ専用レイアウト修正 === */
+/* ===================== スマホ専用 ===================== */
 @media (max-width: 800px) {
   body {
     padding: 10vw 0;
   }
-
   .container {
     max-width: 100vw;
     padding: 0 2vw;
   }
-
   .game-area {
     flex-direction: column;
     align-items: center;
     margin-top: 2vw;
     gap: 3vw;
   }
-
   .side {
     flex-direction: row;
     align-items: center;
@@ -129,18 +127,15 @@ canvas {
     margin: 0 0 1vw 0;
     width: 100vw;
   }
-
   .side h2 {
     font-size: 1.1em;
     margin: 0 6px 0 0;
   }
-
   #next-blocks {
     display: flex;
     flex-direction: row;
     gap: 4px;
   }
-
   canvas#board {
     width: 98vw !important;
     max-width: 98vw !important;
@@ -149,7 +144,6 @@ canvas {
     display: block;
     background: #000;
   }
-
   .controls, .mobile-keys {
     width: 100vw;
     margin: 0 auto;
@@ -158,12 +152,10 @@ canvas {
     flex-wrap: wrap;
     gap: 0.7em;
   }
-
   .row {
     justify-content: center;
     gap: 8px;
   }
-
   .side canvas,
   .next {
     width: 48px !important;
