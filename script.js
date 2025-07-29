@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById('board');
-  // === ★ここに移動するだけ！ ===
   const holdCanvas = document.getElementById('hold');
   const holdCtx = holdCanvas.getContext('2d');
   const nextCanvases = document.querySelectorAll('.next');
@@ -8,12 +7,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============ スマホ対応：盤面リサイズ ============
   function resizeForMobile() {
     if (window.innerWidth < 800) {
-     let w = Math.floor(Math.min(window.innerWidth * 0.7, 260)); // 画面幅の70% or 最大260px
-      // 必ず12の倍数（ブロック幅が整数）に調整
+      let w = Math.floor(Math.min(window.innerWidth * 0.7, 260));
       w -= w % 12;
       canvas.width = w;
       canvas.height = w * (20/12);
-      // HOLD/NEXTも拡大
       holdCanvas.width = holdCanvas.height = Math.floor(w / 3.2);
       nextCanvases.forEach(cnv => {
         cnv.width = cnv.height = Math.floor(w / 3.2);
@@ -27,17 +24,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
-  // 盤面リサイズ時に再描画も
   function smartResizeAndDraw() {
     resizeForMobile();
     draw();
   }
-  // 初回・リサイズ時
   resizeForMobile();
   window.addEventListener('resize', smartResizeAndDraw);
 
   // ============ ゲームロジック ============
-
   const context = canvas.getContext('2d');
   const ROWS = 20;
   const COLS = 12;
@@ -90,9 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     next: [],
   };
 
-  // --- サイズ自動対応（HOLD/NEXTもblockSize可変）---
   function drawMatrix(matrix, offset, ctx = context, customBlockSize = null) {
-    // 盤面は幅÷12、HOLD/NEXTはcanvas幅÷4
     const blockSize = customBlockSize ??
       ((ctx === context) ? Math.floor(canvas.width / COLS) : Math.floor(ctx.canvas.width / 4));
     matrix.forEach((row, y) => {
@@ -287,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drawNext();
     drawHold();
     updateScore();
-    draw(); // 確実に盤面更新
+    draw();
   }
   function playerHold() {
     if (player.hasHeld) return;
@@ -387,94 +379,84 @@ document.addEventListener("DOMContentLoaded", () => {
   playerReset();
 
   // ==== スマホ用：ドラッグ&タップ&ホールドUI対応 ====
-  let dragStartX = 0;
-  let dragStartPosX = 0;
-  let dragging = false;
-  let lastTapTime = 0;
-  let tapTimeout = null;
-
+  let dragPixelBuf = 0;
   function isMobile() {
     return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
   }
 
-  let dragPixelBuf = 0;
- // ==== スマホ用操作を公式準拠に上書き！ ====
-if (isMobile()) {
-  let startX = 0, startY = 0, startTime = 0;
-  let lastMoveX = 0;
-  let moved = false;
+  if (isMobile()) {
+    let startX = 0, startY = 0, startTime = 0;
+    let lastMoveX = 0;
+    let moved = false;
 
-  canvas.addEventListener("touchstart", e => {
-    if (pause) return;
-    if (e.touches.length > 1) return;
-    const t = e.touches[0];
-    startX = lastMoveX = t.clientX;
-    startY = t.clientY;
-    startTime = Date.now();
-    moved = false;
-    dragPixelBuf = 0;
-  });
+    canvas.addEventListener("touchstart", e => {
+      if (pause) return;
+      if (e.touches.length > 1) return;
+      const t = e.touches[0];
+      startX = lastMoveX = t.clientX;
+      startY = t.clientY;
+      startTime = Date.now();
+      moved = false;
+      dragPixelBuf = 0;
+    });
 
-  canvas.addEventListener("touchmove", e => {
-  if (pause) return;
-  if (e.touches.length > 1) return;
-  const t = e.touches[0];
-  let dx = t.clientX - lastMoveX;
-  let dy = t.clientY - startY;
+    canvas.addEventListener("touchmove", e => {
+      if (pause) return;
+      if (e.touches.length > 1) return;
+      const t = e.touches[0];
+      let dx = t.clientX - lastMoveX;
+      let dy = t.clientY - startY;
 
-  dragPixelBuf += dx;
-  let blockW = canvas.width / COLS * 0.9; // ← 0.9は好みで調整
+      dragPixelBuf += dx;
+      let blockW = canvas.width / COLS * 0.9; // ←調整用
+      while (Math.abs(dragPixelBuf) > blockW) {
+        if (dragPixelBuf > 0) {
+          playerMove(1);
+          dragPixelBuf -= blockW;
+        } else if (dragPixelBuf < 0) {
+          playerMove(-1);
+          dragPixelBuf += blockW;
+        }
+        moved = true;
+        draw();
+      }
+      lastMoveX = t.clientX;
 
-  while (Math.abs(dragPixelBuf) > blockW) {
-    if (dragPixelBuf > 0) {
-      playerMove(1);
-      dragPixelBuf -= blockW;
-    } else if (dragPixelBuf < 0) {
-      playerMove(-1);
-      dragPixelBuf += blockW;
-    }
-    moved = true;
-    draw();
+      // ソフトドロップ
+      if (dy > 20 && !moved) {
+        playerDrop();
+        draw();
+        moved = true;
+      }
+      e.preventDefault();
+    });
+
+    canvas.addEventListener("touchend", e => {
+      if (pause) return;
+      const endTime = Date.now();
+      const t = e.changedTouches[0];
+      let dx = t.clientX - startX;
+      let dy = t.clientY - startY;
+      let absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+      // ハードドロップ
+      if (dy > 40 && absDy > absDx && (endTime - startTime) < 200) {
+        playerHardDrop();
+        draw();
+        return;
+      }
+      // 上フリックでホールド
+      if (dy < -40 && absDy > absDx && (endTime - startTime) < 200) {
+        playerHold();
+        draw();
+        return;
+      }
+      // タップで回転
+      if (absDx < 10 && absDy < 10 && (endTime - startTime) < 200) {
+        playerRotate(1);
+        draw();
+        return;
+      }
+    });
   }
-  lastMoveX = t.clientX;
-
-  // ↓ 縦の処理（ソフトドロップ）は今まで通り
-  if (dy > 20 && !moved) {
-    playerDrop();
-    draw();
-    moved = true;
-  }
-  e.preventDefault();
 });
-
-  canvas.addEventListener("touchend", e => {
-    if (pause) return;
-    const endTime = Date.now();
-    const t = e.changedTouches[0];
-    let dx = t.clientX - startX;
-    let dy = t.clientY - startY;
-    let absDx = Math.abs(dx), absDy = Math.abs(dy);
-
-    // --- ハードドロップ判定 ---
-    if (dy > 40 && absDy > absDx && (endTime - startTime) < 200) {
-      playerHardDrop();
-      draw();
-      return;
-    }
-
-    // --- 上にフリックでホールド ---
-    if (dy < -40 && absDy > absDx && (endTime - startTime) < 200) {
-      playerHold();
-      draw();
-      return;
-    }
-
-    // --- タップ(ほぼ動かさない)で回転 ---
-    if (absDx < 10 && absDy < 10 && (endTime - startTime) < 200) {
-      playerRotate(1);
-      draw();
-      return;
-    }
-  });
-}
-}); 
