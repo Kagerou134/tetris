@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============ スマホ対応：盤面リサイズ ============
   function resizeForMobile() {
     if (window.innerWidth < 800) {
-      let w = Math.floor(Math.min(window.innerWidth * 0.85, 320)); // 画面幅の85％ or 最大320px
+     let w = Math.floor(Math.min(window.innerWidth * 0.7, 260)); // 画面幅の70% or 最大260px
       // 必ず12の倍数（ブロック幅が整数）に調整
       w -= w % 12;
       canvas.width = w;
@@ -422,8 +422,8 @@ if (isMobile()) {
     let dy = t.clientY - startY;
 
     // 横移動（1マス単位で追従。端までしっかり。）
-    if (Math.abs(totalDx) > 10 && Math.abs(totalDx) > Math.abs(dy)) {
-      let move = Math.round(totalDx / (canvas.width / COLS));
+    if (Math.abs(totalDx) > 24 && Math.abs(totalDx) > Math.abs(dy)) {
+  let move = Math.round(totalDx / (canvas.width / COLS));
       let newX = player.pos.x + move;
       newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
       if (player.pos.x !== newX) {
