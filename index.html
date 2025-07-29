@@ -7,6 +7,12 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- HOLDを固定表示 -->
+  <div id="hold-fixed">
+    <h2>HOLD</h2>
+    <canvas id="hold" width="80" height="80"></canvas>
+  </div>
+
   <div class="container">
     <header>
       <h1 class="logo">TETRIS</h1>
@@ -17,14 +23,7 @@
     </header>
 
     <div class="game-area">
-      <div class="side">
-        <h2>HOLD</h2>
-        <canvas id="hold" width="80" height="80"></canvas>
-      </div>
-
-     <canvas id="board" width="240" height="400"></canvas>
-
-      <div class="side">
+      <div class="side next-section">
         <h2>NEXT</h2>
         <div id="next-blocks">
           <canvas class="next" width="80" height="80"></canvas>
@@ -33,6 +32,8 @@
           <canvas class="next" width="80" height="80"></canvas>
         </div>
       </div>
+
+      <canvas id="board" width="240" height="400"></canvas>
     </div>
 
     <div class="controls">
