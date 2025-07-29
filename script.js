@@ -447,15 +447,6 @@ if (isMobile()) {
   e.preventDefault();
 });
 
-    // 下方向スライド（20px以上でソフトドロップ）
-    if (dy > 20 && Math.abs(dy) > Math.abs(totalDx) && !moved) {
-      playerDrop();
-      draw();
-      moved = true;
-    }
-    e.preventDefault();
-  });
-
   canvas.addEventListener("touchend", e => {
     if (pause) return;
     const endTime = Date.now();
