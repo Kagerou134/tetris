@@ -354,46 +354,64 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.style.outline = "none";
   canvas.focus();
 
-  // ----------★ スマホ用：スワイプ＆タップ操作 ★----------
-  let touchStartX = null, touchStartY = null, moved = false;
-  function isMobile() {
-    return /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
-  }
-  if (isMobile()) {
-    canvas.addEventListener("touchstart", e => {
-      if (pause) return;
-      if (e.touches.length > 1) return;
-      const t = e.touches[0];
-      touchStartX = t.clientX;
-      touchStartY = t.clientY;
-      moved = false;
-    });
-    canvas.addEventListener("touchmove", e => {
-      if (pause) return;
-      if (e.touches.length > 1) return;
-      const t = e.touches[0];
-      const dx = t.clientX - touchStartX;
-      const dy = t.clientY - touchStartY;
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
-      if (moved) return;
-      if (absDx > 30 && absDx > absDy) {
-        if (dx > 0) playerMove(1);
-        else playerMove(-1);
-        moved = true;
-      } else if (absDy > 30 && absDy > absDx) {
-        if (dy > 0) playerDrop();
-        else playerHardDrop();
-        moved = true;
+  let dragStartX = 0;
+let dragStartPosX = 0;
+let dragging = false;
+let lastTapTime = 0;
+let tapTimeout = null;
+
+if (isMobile()) {
+  // タッチスタート
+  canvas.addEventListener("touchstart", e => {
+    if (pause) return;
+    if (e.touches.length > 1) return;
+
+    dragStartX = e.touches[0].clientX;
+    dragStartPosX = player.pos.x;
+    dragging = false; // タップと区別するため最初はfalse
+  });
+
+  // タッチムーブ（左右スライドのみ対応）
+  canvas.addEventListener("touchmove", e => {
+    if (pause) return;
+    if (e.touches.length > 1) return;
+    const t = e.touches[0];
+    const deltaX = t.clientX - dragStartX;
+    if (Math.abs(deltaX) > 10) {
+      dragging = true;
+      // 1マス単位で追従
+      let move = Math.round(deltaX / blockSize);
+      let newX = dragStartPosX + move;
+      newX = Math.max(0, Math.min(COLS - player.matrix[0].length, newX));
+      player.pos.x = newX;
+      draw();
+    }
+    e.preventDefault();
+  });
+
+  // タッチエンド（指離しで何も落とさない・タップ検出）
+  canvas.addEventListener("touchend", e => {
+    if (pause) return;
+    if (!dragging) {
+      // シングルタップかダブルタップか判定
+      const now = Date.now();
+      if (now - lastTapTime < 300) {
+        // ダブルタップでハードドロップ
+        playerHardDrop();
+        lastTapTime = 0;
+        if (tapTimeout) clearTimeout(tapTimeout);
+      } else {
+        // シングルタップで回転（0.3秒待ってダブルタップじゃなければ実行）
+        tapTimeout = setTimeout(() => {
+          playerRotate(1);
+          draw();
+        }, 300);
+        lastTapTime = now;
       }
-    });
-    canvas.addEventListener("touchend", e => {
-      if (pause) return;
-      if (!moved) playerRotate(1);
-      moved = false;
-    });
-  }
-  // -------------------------------------------------------
+    }
+    dragging = false;
+  });
+}
 
   for (let i = 0; i < 4; i++) player.next.push(getNextPiece());
   playerReset();
