@@ -9,6 +9,17 @@ body {
   min-height: 100vh;
 }
 
+@media (max-width: 800px) {
+  body {
+    padding: 10vw 0 10vw 0;  /* 上下10vw余白 */
+  }
+  .container {
+    max-width: 100vw;
+    padding: 0 2vw;
+  }
+  /* ...省略... */
+}
+
 .container {
   max-width: 1000px;
   padding: 10px;
