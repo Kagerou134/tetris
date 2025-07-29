@@ -1,5 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById('board');
+  // === ★ここに移動するだけ！ ===
+  const holdCanvas = document.getElementById('hold');
+  const holdCtx = holdCanvas.getContext('2d');
+  const nextCanvases = document.querySelectorAll('.next');
 
   // ============ スマホ対応：盤面リサイズ ============
   function resizeForMobile() {
@@ -38,10 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const ROWS = 20;
   const COLS = 12;
   const arena = createMatrix(COLS, ROWS);
-
-  const holdCanvas = document.getElementById('hold');
-  const holdCtx = holdCanvas.getContext('2d');
-  const nextCanvases = document.querySelectorAll('.next');
 
   const colors = [
     null, '#00FFFF', '#0000FF', '#FFA500', '#FFFF00', '#00FF00', '#e628e6ff', '#FF0000'
