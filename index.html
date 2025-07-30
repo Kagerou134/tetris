@@ -1,61 +1,177 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TETRIS CLONE</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <!-- HOLDを固定表示 -->
-  <div id="hold-fixed">
-    <h2>HOLD</h2>
-    <canvas id="hold" width="80" height="80"></canvas>
-  </div>
+body {
+  margin: 0;
+  background: #111;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
 
-  <div class="container">
-    <header>
-      <h1 class="logo">TETRIS</h1>
-      <div class="status">
-        <div id="level">LV:000</div>
-        <div id="score">SCORE:000000000000</div>
-      </div>
-    </header>
+.container {
+  max-width: 1000px;
+  padding: 10px;
+}
 
-    <div class="game-area">
-      <div class="side next-section">
-        <h2>NEXT</h2>
-        <div id="next-blocks">
-          <canvas class="next" width="80" height="80"></canvas>
-          <canvas class="next" width="80" height="80"></canvas>
-          <canvas class="next" width="80" height="80"></canvas>
-          <canvas class="next" width="80" height="80"></canvas>
-        </div>
-      </div>
+/* header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0078d7;
+  padding: 10px;
+  border-radius: 5px;
+}
 
-      <canvas id="board" width="240" height="400"></canvas>
-    </div>
+.logo {
+  font-size: 28px;
+  color: orange;
+  text-shadow: 2px 2px #000;
+  margin: 0;
+}
 
-    <div class="controls">
-      <button id="play">PLAY / PAUSE</button>
-      <button id="reset">RESET</button>
-    </div>
+.status {
+  text-align: right;
+}
+.status div {
+  font-size: 16px;
+  font-weight: bold;
+  color: yellow;
+}
 
-    <div class="mobile-keys">
-      <div class="row">
-        <button data-key="ArrowLeft">←</button>
-        <button data-key="ArrowDown">↓</button>
-        <button data-key="ArrowRight">→</button>
-      </div>
-      <div class="row">
-        <button data-key="z">Z</button>
-        <button data-key="x">X</button>
-        <button data-key="c">HOLD</button>
-        <button data-key=" ">DROP</button>
-      </div>
-    </div>
-  </div>
+/* ゲームエリア全体配置 */
+.game-area {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 20px;
+  gap: 30px;
+  flex-wrap: wrap;
+}
 
-  <script src="script.js"></script>
-</body>
-</html>
+/* HOLD 固定位置 */
+#hold-fixed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 20px;
+}
+
+#hold-fixed h2 {
+  margin: 0 0 8px 0;
+}
+
+/* NEXT */
+.next-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#next-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+canvas {
+  background: #000;
+  border: 1px solid #555;
+}
+
+/* メインボード */
+canvas#board {
+  background: #000;
+}
+
+/* ボタン類 */
+.controls {
+  margin-top: 15px;
+  text-align: center;
+}
+.controls button {
+  background: #006400;
+  color: #fff;
+  padding: 8px 20px;
+  margin: 0 5px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.controls button#reset {
+  background: #8B0000;
+}
+
+/* モバイルキー */
+.mobile-keys {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+.row {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  justify-content: center;
+}
+.row button {
+  background: #333;
+  color: #eee;
+  border: 1px solid #666;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* スマホ向けレスポンシブ */
+@media (max-width: 800px) {
+  body {
+    padding: 10vw 0;
+  }
+
+  .game-area {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  #hold-fixed {
+    order: 1;
+    margin-right: 0;
+  }
+
+  canvas#board {
+    width: 98vw !important;
+    height: auto !important;
+  }
+
+  .next-section {
+    order: 3;
+  }
+
+  #next-blocks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .controls, .mobile-keys {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.7em;
+  }
+
+  .side canvas,
+  .next {
+    width: 48px !important;
+    height: 48px !important;
+  }
+}
