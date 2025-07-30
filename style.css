@@ -137,28 +137,16 @@ canvas#board {
     flex-direction: column;
   }
 
-  .game-area {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-
-  canvas#board {
-    width: 65vw !important;
-    height: auto !important;
-  }
-
-  /* HOLDとNEXTを上に並べる */
-  .top-info {
-    display: flex;
+  .top-info-row {
+    flex-direction: row;
     justify-content: space-around;
+    flex-wrap: wrap;
     width: 100%;
     margin-bottom: 10px;
-    flex-wrap: wrap;
   }
 
-  #hold-fixed, .next-section {
-    margin: 0 10px;
+  #hold-fixed,
+  .next-section {
     order: 0;
   }
 
@@ -169,6 +157,17 @@ canvas#board {
     gap: 4px;
   }
 
+  canvas#board {
+    width: 70vw !important;
+    height: auto !important;
+  }
+
+  .next,
+  #hold {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
   .controls,
   .mobile-keys {
     width: 100%;
@@ -177,10 +176,5 @@ canvas#board {
     flex-wrap: wrap;
     gap: 0.7em;
   }
-
-  .side canvas,
-  .next {
-    width: 48px !important;
-    height: 48px !important;
-  }
 }
+
