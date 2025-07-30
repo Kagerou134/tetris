@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="container">
+    <!-- ヘッダー -->
     <header>
       <h1 class="logo">TETRIS</h1>
       <div class="status">
@@ -16,17 +17,14 @@
       </div>
     </header>
 
-    <!-- HOLD・BOARD・NEXT 横並び配置 -->
-    <div class="game-area">
-
+    <!-- HOLDとNEXTを上に配置 -->
+    <div class="top-info">
       <div id="hold-fixed">
         <h2>HOLD</h2>
         <canvas id="hold" width="80" height="80"></canvas>
       </div>
 
-      <canvas id="board" width="240" height="400"></canvas>
-
-      <div class="side next-section">
+      <div class="next-section side">
         <h2>NEXT</h2>
         <div id="next-blocks">
           <canvas class="next" width="80" height="80"></canvas>
@@ -35,7 +33,11 @@
           <canvas class="next" width="80" height="80"></canvas>
         </div>
       </div>
+    </div>
 
+    <!-- メインボード -->
+    <div class="game-area">
+      <canvas id="board" width="240" height="400"></canvas>
     </div>
 
     <!-- コントロールボタン -->
@@ -44,7 +46,7 @@
       <button id="reset">RESET</button>
     </div>
 
-    <!-- モバイル操作ボタン -->
+    <!-- モバイル操作キー -->
     <div class="mobile-keys">
       <div class="row">
         <button data-key="ArrowLeft">←</button>
