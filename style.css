@@ -48,26 +48,43 @@ header {
   gap: 30px;
 }
 
-.side {
+/* HOLD 固定表示 */
+#hold-fixed {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  margin-right: 20px;
+}
+
+#hold-fixed h2 {
+  margin: 0 0 8px 0;
+}
+
+/* NEXT */
+.next-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 #next-blocks {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
 }
 
 canvas {
   background: #000;
   border: 1px solid #555;
-  margin: 5px 0;
 }
 
+/* メインボード */
+canvas#board {
+  background: #000;
+}
+
+/* ボタン類 */
 .controls {
   margin-top: 15px;
   text-align: center;
@@ -88,6 +105,7 @@ canvas {
   background: #8B0000;
 }
 
+/* モバイルキー */
 .mobile-keys {
   display: flex;
   flex-direction: column;
@@ -117,35 +135,42 @@ canvas {
   body {
     padding: 10vw 0;
   }
+
   .container {
     max-width: 100vw;
     padding: 0 2vw;
   }
+
+  header {
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
   .game-area {
     flex-direction: column;
     align-items: center;
     margin-top: 2vw;
     gap: 3vw;
   }
-  .side {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin: 0 0 1vw 0;
-    width: 100vw;
-    flex-wrap: wrap;
+
+  #hold-fixed {
+    order: 1;
+    margin: 0;
   }
-  .side h2 {
-    font-size: 1.1em;
-    margin: 0 6px 0 0;
+
+  .next-section {
+    order: 2;
+    margin: 0;
   }
+
   #next-blocks {
-    display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 4px;
-    flex-wrap: wrap;
   }
+
   canvas#board {
     width: 98vw !important;
     max-width: 98vw !important;
@@ -154,7 +179,9 @@ canvas {
     display: block;
     background: #000;
   }
-  .controls, .mobile-keys {
+
+  .controls,
+  .mobile-keys {
     width: 100vw;
     margin: 0 auto;
     display: flex;
@@ -162,12 +189,15 @@ canvas {
     flex-wrap: wrap;
     gap: 0.7em;
   }
+
   .row {
     justify-content: center;
     gap: 8px;
   }
+
   .side canvas,
-  .next {
+  .next,
+  #hold {
     width: 48px !important;
     height: 48px !important;
   }
