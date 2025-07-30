@@ -40,12 +40,13 @@ header {
   color: yellow;
 }
 
-.game-area {
+/* ===== 横並びのホールド・盤面・ネクスト（PC用） ===== */
+.top-info-row {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  margin-top: 20px;
   gap: 30px;
+  margin-top: 20px;
 }
 
 /* HOLD 固定表示 */
@@ -53,7 +54,6 @@ header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-right: 20px;
 }
 
 #hold-fixed h2 {
@@ -138,16 +138,9 @@ canvas#board {
   }
 
   .top-info-row {
-    flex-direction: row;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    width: 100%;
-    margin-bottom: 10px;
-  }
-
-  #hold-fixed,
-  .next-section {
-    order: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
   }
 
   #next-blocks {
@@ -177,4 +170,3 @@ canvas#board {
     gap: 0.7em;
   }
 }
-
