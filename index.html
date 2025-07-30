@@ -8,7 +8,6 @@
 </head>
 <body>
   <div class="container">
-
     <!-- ヘッダー -->
     <header>
       <h1 class="logo">TETRIS</h1>
@@ -18,12 +17,14 @@
       </div>
     </header>
 
-    <!-- HOLD/NEXT横並び -->
+    <!-- HOLD・NEXT・BOARD を横並び -->
     <div class="top-info-row">
       <div id="hold-fixed">
         <h2>HOLD</h2>
         <canvas id="hold" width="80" height="80"></canvas>
       </div>
+
+      <canvas id="board" width="240" height="400"></canvas>
 
       <div class="next-section side">
         <h2>NEXT</h2>
@@ -36,18 +37,13 @@
       </div>
     </div>
 
-    <!-- メインボード -->
-    <div class="game-area">
-      <canvas id="board" width="240" height="400"></canvas>
-    </div>
-
-    <!-- コントロールボタン -->
+    <!-- 操作ボタン -->
     <div class="controls">
       <button id="play">PLAY / PAUSE</button>
       <button id="reset">RESET</button>
     </div>
 
-    <!-- モバイル操作キー -->
+    <!-- モバイル操作 -->
     <div class="mobile-keys">
       <div class="row">
         <button data-key="ArrowLeft">←</button>
@@ -61,7 +57,6 @@
         <button data-key=" ">DROP</button>
       </div>
     </div>
-
   </div>
 
   <script src="script.js"></script>
